@@ -3,15 +3,75 @@ import MoadalLayout from "../../layouts/Moadal.layout";
 import NoteModalContext from "../../context/NoteModalContext";
 import { X } from "@phosphor-icons/react";
 
-const NoteModal = () => {
-  const { timeStamp, videoId, isNoteModalOpen, setIsNoteModalOpen } =
-    useContext(NoteModalContext);
-  const [note, setNote] = useState("");
+const NoteModal = ({ scrollToLastNote }) => {
+  const {
+    timeStamp,
+    videoId,
+    isNoteModalOpen,
+    setIsNoteModalOpen,
+    storedNotes,
+    setStoredNotes,
+    forEdit,
+    setForEdit,
+    note,
+    setNote,
+    noteId,
+  } = useContext(NoteModalContext);
+
+  function generateRandomCode() {
+    const characters =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const codeLength = 10;
+    let code = "";
+
+    for (let i = 0; i < codeLength; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      code += characters[randomIndex];
+    }
+
+    return code;
+  }
 
   const handleAddNote = () => {
-    console.log(note);
-    console.log(timeStamp);
-    console.log(videoId);
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()} ${currentDate.toLocaleString(
+      "default",
+      { month: "short" }
+    )} '${currentDate.getFullYear().toString().slice(-2)}`;
+    const noteObj = {
+      note,
+      timeStamp,
+      date: formattedDate,
+      id: generateRandomCode(),
+    };
+    const newNotes = [...storedNotes, noteObj];
+    setStoredNotes(newNotes);
+    console.log(newNotes);
+    localStorage.setItem(videoId.toString(), JSON.stringify(newNotes));
+    setNote("");
+    setIsNoteModalOpen(false);
+    scrollToLastNote();
+  };
+
+  const handleEditNote = () => {
+    const index = storedNotes.findIndex((note) => note.id === noteId);
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()} ${currentDate.toLocaleString(
+      "default",
+      { month: "short" }
+    )} '${currentDate.getFullYear().toString().slice(-2)}`;
+    const noteObj = {
+      note,
+      timeStamp,
+      date: formattedDate,
+      id: noteId,
+    };
+    let arr = storedNotes;
+    arr[index] = noteObj;
+    setStoredNotes(arr);
+    localStorage.setItem(videoId.toString(), JSON.stringify(arr));
+    setForEdit(false);
+    setIsNoteModalOpen(false);
   };
 
   if (!isNoteModalOpen) return null;
@@ -21,7 +81,7 @@ const NoteModal = () => {
         <div className="flex items-center justify-between">
           <span className="w-2 h-2"></span>
           <h2 className="font-semibold text-[#101828] text-lg text-center">
-            Add a Note
+            {forEdit ? "Edit Note" : "Add Note"}
           </h2>
           <X
             size={24}
@@ -38,9 +98,11 @@ const NoteModal = () => {
         <button
           type="button"
           className="bg-blue-500 text-white rounded-md px-4 py-2 mt-4"
-          onClick={handleAddNote}
+          onClick={() => {
+            forEdit ? handleEditNote() : handleAddNote();
+          }}
         >
-          Add Note
+          {forEdit ? "Edit Note" : "Add Note"}
         </button>
       </div>
     </MoadalLayout>
